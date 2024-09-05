@@ -1,0 +1,62 @@
+﻿@page "/kolegij-detalji/{id:int}"
+@using AttendanceChecker.Models
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Kolegij? kolegij;
+    private bool isLoading = true;
+    private bool hasError = false;
+    private HttpClient? _httpClient;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _httpClient = ClientFactory.CreateClient("API");
+            // Fetch the details for the selected kolegij by ID
+            kolegij = await _httpClient.GetFromJsonAsync<Kolegij>($"api/Attendance/kolegiji/{Id}");
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            Console.WriteLine($"Error fetching kolegij details: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        // Navigate back to the previous page (list of kolegiji)
+        Navigation.NavigateTo("/");
+    }
+}
+
+<PageTitle>Kolegij Details</PageTitle>
+
+@if (isLoading)
+{
+    <p>Loading kolegij details...</p>
+}
+else if (hasError)
+{
+    <p>Error loading kolegij details.</p>
+}
+else if (kolegij is not null)
+{
+    <div>
+        <h3>@kolegij.Naziv</h3>
+        <p>Professor: @kolegij.Profesor</p>
+        <p>Assistant: @kolegij.Asistent</p>
+        <button @onclick="GoBack">Go Back</button>
+    </div>
+}
+else
+{
+    <p>No details available.</p>
+}

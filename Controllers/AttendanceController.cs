@@ -123,6 +123,18 @@ namespace AttendanceChecker.Controllers
             return Ok(kolegijiResponse.Models);
         }
 
+        // GET /kolegiji/{id}
+        [HttpGet("kolegiji/{id:int}")]
+        public async Task<IActionResult> GetKolegij(int id)
+        {
+            var kolegij = await _supabaseClient.From<Kolegij>().Where(x => x.KolegijId == id).Single();
+
+            if (kolegij is null)
+                return NotFound(new { error = "Kolegij not found" });
+
+            return Ok(kolegij);
+        }
+
         // GET /student/{id}
         [HttpGet("student/{id:int}")]
         public async Task<IActionResult> GetStudent(int id)
