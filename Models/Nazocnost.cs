@@ -1,5 +1,4 @@
-﻿using AttendanceChecker.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 [Table("nazocnost", Schema = "public")]
