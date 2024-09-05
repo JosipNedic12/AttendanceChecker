@@ -3,6 +3,21 @@ using AttendanceChecker.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Register HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+
+// Register HttpClient
+builder.Services.AddHttpClient("API", (serviceProvider, client) =>
+{
+    var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+    var request = httpContextAccessor.HttpContext?.Request;
+    if (request != null)
+    {
+        var baseUrl = $"{request.Scheme}://{request.Host}";
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
+
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer(); // Necessary for minimal APIs
 builder.Services.AddSwaggerGen(); // Add Swagger generation services

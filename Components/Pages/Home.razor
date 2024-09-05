@@ -1,7 +1,55 @@
 ﻿@page "/"
+@using AttendanceChecker.Models
+@inject IHttpClientFactory ClientFactory
 
-<PageTitle>Home</PageTitle>
+@code {
+    private List<Kolegij>? kolegiji;
+    private bool isLoading = true;
+    private bool hasError = false;
 
-<h1>Hello, world!</h1>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Use the named HttpClient ("API") to call your API
+            var httpClient = ClientFactory.CreateClient("API");
 
-Welcome to your new app.
+            // Fetch the kolegiji data from your API
+            kolegiji = await httpClient.GetFromJsonAsync<List<Kolegij>>("api/Attendance/kolegiji");
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            Console.WriteLine($"Error fetching kolegiji: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
+
+<PageTitle>Kolegiji</PageTitle>
+<h3>List of Kolegiji</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (hasError)
+{
+    <p>Error loading kolegiji.</p>
+}
+else if (kolegiji is not null && kolegiji.Any())
+{
+    <ul>
+        @foreach (var kolegij in kolegiji)
+        {
+            <li>@kolegij.Naziv (Prof: @kolegij.Profesor)</li>
+        }
+    </ul>
+}
+else
+{
+    <p>No kolegiji available.</p>
+}
