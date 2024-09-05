@@ -1,34 +1,24 @@
-﻿using Supabase.Postgrest.Models;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using Supabase.Postgrest.Attributes;
+using Supabase.Postgrest.Models;
 
 namespace AttendanceChecker.Models
 {
-    [Table("kolegiji", Schema = "public")]
+    [Table("kolegiji")]
     public class Kolegij : BaseModel
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Column("kolegij_id")]
+        [PrimaryKey("kolegij_id", false)]
         public int KolegijId { get; set; }
 
-        [Required]
-        [MaxLength(255)]
         [Column("naziv")]
         public string Naziv { get; set; }
 
-        [Required]
-        [MaxLength(255)]
         [Column("profesor")]
         public string Profesor { get; set; }
 
-        [MaxLength(255)]
         [Column("asistent")]
         public string? Asistent { get; set; }
 
         [Column("br_sati")]
         public long? BrojSati { get; set; }
     }
-
 }
-
