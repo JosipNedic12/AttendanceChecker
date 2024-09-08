@@ -5,24 +5,29 @@
 @rendermode InteractiveServer
 
 @code {
-    [Parameter] public int Id { get; set; }
+    [Parameter] public int id { get; set; }
+    private HttpClient? _httpClient;
     private Kolegij? kolegij;
+    private List<StudentAttendance>? studentAttendance;
     private bool isLoading = true;
     private bool hasError = false;
-    private HttpClient? _httpClient;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             _httpClient = ClientFactory.CreateClient("API");
-            // Fetch the details for the selected kolegij by ID
-            kolegij = await _httpClient.GetFromJsonAsync<Kolegij>($"api/Attendance/kolegiji/{Id}");
+
+            // Fetch kolegij details
+            kolegij = await _httpClient.GetFromJsonAsync<Kolegij>($"api/Attendance/kolegiji/{id}");
+
+            // Fetch students' attendance data for the selected kolegij
+            studentAttendance = await _httpClient.GetFromJsonAsync<List<StudentAttendance>>($"api/Attendance/attendance-percentage/{id}");
         }
         catch (Exception ex)
         {
             hasError = true;
-            Console.WriteLine($"Error fetching kolegij details: {ex.Message}");
+            Console.WriteLine($"Error fetching kolegij details or students: {ex.Message}");
         }
         finally
         {
@@ -30,33 +35,203 @@
         }
     }
 
+    private async Task ZapočniTermin()
+    {
+        try
+        {
+            // The endpoint where your API inserts a new Termin
+            string endpoint = $"api/Attendance/zapocni-termin/{id}";
+
+            // Make a POST request to start the termin
+            var response = await _httpClient.PostAsync(endpoint, null); // null for no content
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Termin successfully started.");
+            }
+            else
+            {
+                Console.WriteLine($"Error starting termin: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception when starting termin: {ex.Message}");
+        }
+    }
+
+    // Trigger the download of the Excel file
+    private async Task ExportAttendance()
+    {
+        try
+        {
+            // Call the API to download the attendance Excel file
+            var response = await _httpClient.GetAsync($"api/Attendance/export-attendance/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Get the file content as a byte array
+                var fileContent = await response.Content.ReadAsByteArrayAsync();
+                var fileName = "attendance.xlsx";
+
+                // Log to check if file content is received
+                Console.WriteLine("File content size: " + fileContent.Length);
+
+                // Trigger the download of the file using JavaScript interop
+                await DownloadFile(fileName, fileContent);
+            }
+            else
+            {
+                Console.WriteLine("Error exporting attendance: Response was not successful.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting attendance: {ex.Message}");
+        }
+    }
+
+    // Use JavaScript interop to trigger the file download
+    [Inject] IJSRuntime JS { get; set; }
+
+    private async Task DownloadFile(string fileName, byte[] fileContent)
+    {
+        try
+        {
+            var base64String = Convert.ToBase64String(fileContent);
+            Console.WriteLine("Base64 string: " + base64String);
+
+            // Log base64 string length for debugging
+            Console.WriteLine("Base64 string size: " + base64String.Length);
+
+            // Call the JavaScript function to download the file
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, base64String);
+        }
+        catch (JSException jsEx)
+        {
+            Console.WriteLine($"JavaScript Interop Error: {jsEx.Message}");
+        }
+    }
+
+    // Navigate back to the main page
     private void GoBack()
     {
-        // Navigate back to the previous page (list of kolegiji)
         Navigation.NavigateTo("/");
     }
 }
 
-<PageTitle>Kolegij Details</PageTitle>
+<PageTitle>Detalji Kolegija</PageTitle>
+
+
 
 @if (isLoading)
 {
-    <p>Loading kolegij details...</p>
+    <p>Loading...</p>
 }
 else if (hasError)
 {
-    <p>Error loading kolegij details.</p>
+    <p>Error loading kolegij details or students.</p>
 }
-else if (kolegij is not null)
+else if (kolegij is not null && studentAttendance is not null)
 {
-    <div>
-        <h3>@kolegij.Naziv</h3>
-        <p>Professor: @kolegij.Profesor</p>
-        <p>Assistant: @kolegij.Asistent</p>
-        <button @onclick="GoBack">Go Back</button>
+    <h3>@kolegij.Naziv</h3>
+    <div class="kolegij-details">
+        <p><strong>Professor:</strong> @kolegij.Profesor</p>
+        <p><strong>Assistant:</strong> @kolegij.Asistent</p>
+
+        <button class="btn btn-success" @onclick="ZapočniTermin">Započni termin</button>
+
+        <button class="btn btn-primary" @onclick="ExportAttendance">Izvoz</button>
+
+        <button class="btn btn-primary" @onclick="GoBack">Povratak</button>
     </div>
+
+    <h4>Prisutnost studenata</h4>
+    <div class="student-list">
+        @foreach (var student in studentAttendance)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <img src="@(!string.IsNullOrEmpty(student.SlikaUrl) ? student.SlikaUrl : "placeholder-image.jpg")" alt="Student Photo" class="student-photo" />
+                    <div class="card-text-wrapper">
+                        <h5 class="card-title">@student.Ime @student.Prezime</h5>
+                        <p class="card-text">
+                            <strong>OIB:</strong> @student.Oib <br />
+                            <strong>Prisutnost:</strong> @student.Percentage%
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
 }
 else
 {
-    <p>No details available.</p>
+    <p>No details available for this kolegij.</p>
 }
+
+<style>
+    .kolegij-details {
+        padding: 20px;
+        background-color: #f8f9fa;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .student-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        width: 100%; /* Make the card fill the full width */
+        box-sizing: border-box;
+    }
+
+
+    .card-body {
+        display: flex;
+        align-items: center;
+        width: 100%; /* Ensure the body takes full width */
+        justify-content: space-between;
+    }
+
+    .student-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-right: 20px;
+        flex-shrink: 0; /* Ensure the photo doesn't shrink */
+    }
+
+    .card-text-wrapper {
+        display: flex;
+        flex-direction: row; /* Ensure name and other details are in one row */
+        justify-content: space-between;
+        align-items: center;
+        flex-grow: 1;
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+
+    .card-text {
+        font-size: 16px;
+        color: #6c757d;
+    }
+
+</style>

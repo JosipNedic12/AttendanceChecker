@@ -1,0 +1,74 @@
+﻿<!-- CalendarGrid.razor -->
+@typeparam TItem where TItem : AttendanceChecker.Models.Termin
+
+
+<div class="calendar-grid">
+    @foreach (var week in Weeks)
+    {
+        <div class="calendar-week">
+            @foreach (var day in week)
+            {
+                <div class="calendar-day">
+                    @if (day.HasItem)
+                    {
+                        <div class="event">
+                            <!-- Customize based on your model -->
+                            <strong>@day.Item.Vrijeme.ToShortDateString()</strong> <br />
+                            @day.Item.Kolegij.Naziv
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<TItem> Items { get; set; } = new List<TItem>();
+
+    public List<List<Day<TItem>>> Weeks { get; set; } = new List<List<Day<TItem>>>();
+
+    protected override void OnParametersSet()
+    {
+        GenerateCalendarGrid();
+    }
+
+    private void GenerateCalendarGrid()
+    {
+        // Clear existing weeks
+        Weeks.Clear();
+
+        // For simplicity, assume we're creating a grid for the current month
+        var currentDate = DateTime.Now;
+        var daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+
+        var week = new List<Day<TItem>>();
+        for (var day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(currentDate.Year, currentDate.Month, day);
+            var itemForDate = Items.FirstOrDefault(i => i.Vrijeme.Date == date);
+
+            week.Add(new Day<TItem>
+                {
+                    Date = date,
+                    HasItem = itemForDate != null,
+                    Item = itemForDate
+                });
+
+            // If the week is complete or it's the last day of the month, add it to the weeks
+            if (week.Count == 7 || day == daysInMonth)
+            {
+                Weeks.Add(week);
+                week = new List<Day<TItem>>();
+            }
+        }
+    }
+
+    public class Day<T>
+    {
+        public DateTime Date { get; set; }
+        public bool HasItem { get; set; }
+        public T Item { get; set; }
+    }
+}

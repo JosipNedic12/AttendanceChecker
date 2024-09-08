@@ -1,0 +1,29 @@
+﻿@page "/raspored"
+@using AttendanceChecker.Models
+@inject IHttpClientFactory HttpClientFactory
+
+<h3>Raspored for Termini</h3>
+
+@if (Termini == null)
+{
+    <p>Loading...</p>
+}
+else if (!Termini.Any())
+{
+    <p>No schedule available.</p>
+}
+else
+{
+    <RasporedLayout Items="Termini" />
+}
+
+@code {
+    private List<Termin> Termini;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpClient = HttpClientFactory.CreateClient("API");
+        // Fetch data from the updated API endpoint
+        Termini = await httpClient.GetFromJsonAsync<List<Termin>>("/api/Attendance/termini");
+    }
+}

@@ -1,0 +1,141 @@
+﻿@page "/studenti"
+@using AttendanceChecker.Models
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3>Studenti</h3>
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (hasError)
+{
+    <p>Error loading students.</p>
+}
+else if (students is not null && students.Any())
+{
+    <button class="btn btn-primary" @onclick="GoBack">Povratak</button>
+    <div class="student-list">
+        @foreach (var student in students)
+        {
+            <div class="card" @onclick="() => OpenStudentDetails(student.StudentId)">
+                <div class="card-body">
+                    <img src="@(!string.IsNullOrEmpty(student.Slika) ? student.Slika : "placeholder-image.jpg")" alt="Student Photo" class="student-photo" />
+                    <div class="card-text-wrapper">
+                        <h5 class="card-title">@student.Ime @student.Prezime</h5>
+                        <p class="card-text">
+                            <strong>OIB:</strong> @student.Oib <br />
+                            <strong>Email:</strong> @student.Email
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>No students available.</p>
+}
+
+@code {
+    private List<Student>? students;
+    private bool isLoading = true;
+    private bool hasError = false;
+    private HttpClient _httpClient;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Initialize HTTP Client
+            _httpClient = ClientFactory.CreateClient("API");
+
+            // Fetch students from the API
+            students = await _httpClient.GetFromJsonAsync<List<Student>>("api/Attendance/students");
+
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            Console.WriteLine($"Error fetching students: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    // Method to open the student details page
+    private void OpenStudentDetails(int studentId)
+    {
+        Navigation.NavigateTo($"/student-detalji/{studentId}");
+    }
+}
+
+
+<style>
+    .student-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        padding: 15px;
+        display: inline-flex;
+        align-items: Left;
+        width: 100%; /* Make the card fill the full width */
+        box-sizing: border-box;
+    }
+
+    .card-body {
+        display: flex;
+        align-items: center;
+        width: 100%; /* Ensure the body takes full width */
+        justify-content: space-between;
+    }
+
+    .student-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-right: 20px;
+        flex-shrink: 0; /* Ensure the photo doesn't shrink */
+    }
+
+    .card-text-wrapper {
+        display: flex;
+        flex-direction: row; /* Ensure name and other details are in one row */
+        justify-content: space-between;
+        align-items: center;
+        flex-grow: 1;
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+
+    .card-text {
+        font-size: 16px;
+        color: #6c757d;
+    }
+
+	.card:hover {
+        cursor: pointer;
+		transform: scale(1.02);
+		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+	}
+</style>

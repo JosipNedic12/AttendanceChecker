@@ -1,0 +1,84 @@
+﻿@page "/student-detalji/{studentId:int}"
+@using AttendanceChecker.Models
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+@code {
+    [Parameter] public int studentId { get; set; }
+    private Student? student;
+    private bool isLoading = true;
+    private bool hasError = false;
+    private HttpClient _httpClient;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _httpClient = ClientFactory.CreateClient("API");
+
+            // Fetch student details from the API
+            student = await _httpClient.GetFromJsonAsync<Student>($"api/Attendance/student/{studentId}");
+
+            if (student == null)
+            {
+                hasError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            Console.WriteLine($"Error fetching student details: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/studenti");
+    }
+}
+
+@if (isLoading)
+{
+    <p>Loading student details...</p>
+}
+else if (hasError || student == null)
+{
+    <p>Error loading student details.</p>
+}
+else
+{
+    <div class="student-details">
+        <img src="@(!string.IsNullOrEmpty(student.Slika) ? student.Slika : "placeholder-image.jpg")" alt="Student Photo" class="student-photo-large" />
+        <h3>@student.Ime @student.Prezime</h3>
+        <p><strong>OIB:</strong> @student.Oib</p>
+        <p><strong>Email:</strong> @student.Email</p>
+        <p><strong>Broj Kartice:</strong> @student.BrKartice</p>
+
+        <button class="btn btn-primary" @onclick="GoBack">Povratak</button>
+    </div>
+}
+
+<style>
+    .student-details {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .student-photo-large {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        margin-top: 20px;
+    }
+</style>

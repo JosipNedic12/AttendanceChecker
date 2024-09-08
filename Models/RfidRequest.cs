@@ -1,4 +1,6 @@
-﻿namespace AttendanceChecker.Models
+﻿using Supabase.Postgrest.Models;
+
+namespace AttendanceChecker.Models
 {
     public class RfidRequest
     {

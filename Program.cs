@@ -1,6 +1,5 @@
 using AttendanceChecker.Components;
 using AttendanceChecker.Models;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Register HttpContextAccessor

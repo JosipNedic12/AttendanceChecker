@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">AttendanceChecker</a>
+        <a class="navbar-brand" href="">Prisutnost na nastavi</a>
     </div>
 </div>
 
@@ -10,21 +10,29 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Kolegiji
+                <span class="bi bi-book fs-4" aria-hidden="true"></span> Kolegiji
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Studenti
+            <NavLink class="nav-link" href="studenti">
+                <span class="bi bi-mortarboard fs-4" aria-hidden="true"></span> Studenti
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            <NavLink class="nav-link" href="raspored">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Raspored
             </NavLink>
         </div>
     </nav>
 </div>
 
+<style>
+    .bi-mortarboard{
+        margin-bottom: 1.7rem; 
+    }
+    .bi-book{
+        margin-bottom: 1.5rem;
+    }
+</style>
