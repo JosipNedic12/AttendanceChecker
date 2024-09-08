@@ -1,6 +1,13 @@
 using AttendanceChecker.Components;
 using AttendanceChecker.Models;
+using System.Globalization;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Set Croatian culture globally
+var cultureInfo = new CultureInfo("hr-HR");
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 // Register HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
@@ -58,5 +65,10 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapControllers();
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+	DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("hr-HR"),
+});
 
 app.Run();

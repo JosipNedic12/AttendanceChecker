@@ -1,4 +1,4 @@
-﻿@page "/kolegij-detalji/{id:int}"
+﻿@page "/termin-detalji/{id:int}"
 @using AttendanceChecker.Models
 @using AttendanceChecker.Models.Entities
 @using System.Text.Json
@@ -11,13 +11,13 @@
 @code {
 	[Parameter] public int id { get; set; }
 	private HttpClient? _httpClient;
-	private Kolegij? kolegij;
+	private Termin? termin;
+	private List<StudentAttendance>? studentAttendance;
 	private List<Dvorana>? dvorane;
-	private List<Termin>? termini;
 	private bool isLoading = true;
 	private bool hasError = false;
 	private int selectedDvoranaId { get; set; } = 1; // Default DvoranaId
-	private Termin? activeTermin;
+	private bool isTerminActive;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -25,17 +25,12 @@
 		{
 			_httpClient = ClientFactory.CreateClient("API");
 
-			// Fetch kolegij details
-			kolegij = await _httpClient.GetFromJsonAsync<Kolegij>($"api/Kolegij/{id}");
-
-			// Fetch dvorane for filling dropdown
-			dvorane = await _httpClient.GetFromJsonAsync<List<Dvorana>>($"api/Dvorana");
+			// Fetch students' attendance data for current termin
+			studentAttendance = await _httpClient.GetFromJsonAsync<List<StudentAttendance>>($"api/Attendance/termin/{id}");
 
 			// Fetch termin
-			termini = await _httpClient.GetFromJsonAsync<List<Termin>>($"api/Termin/kolegij/{id}");
-
-			// Check for active termin (within the current date and time)
-			activeTermin = termini?.FirstOrDefault(t => DateTime.Now >= t.StartTime && (!t.EndTime.HasValue || DateTime.Now <= t.EndTime));
+			termin = await _httpClient.GetFromJsonAsync<Termin>($"api/Termin/{id}");
+			isTerminActive = DateTime.Now >= termin.StartTime && (!termin.EndTime.HasValue || DateTime.Now <= termin.EndTime);
 		}
 		catch (Exception ex)
 		{
@@ -48,52 +43,14 @@
 		}
 	}
 
-	private async Task StartTermin()
-	{
-		try
-		{
-			string endpoint = $"api/Termin/start";
-
-			var requestBody = new StartTerminRequest
-				{
-					KolegijId = id,
-					DvoranaId = selectedDvoranaId
-				};
-
-			// Serialize the request body to JSON
-			var jsonContent = JsonSerializer.Serialize(requestBody);
-
-			// Create HttpContent from the serialized JSON
-			var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-			// Make a POST request to start the termin
-			var response = await _httpClient.PostAsync(endpoint, httpContent);
-
-			if (response.IsSuccessStatusCode)
-			{
-				Console.WriteLine("Termin successfully started.");
-				// Reload the list of termini
-				await OnInitializedAsync();
-			}
-			else
-			{
-				Console.WriteLine($"Error starting termin: {response.StatusCode}");
-			}
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine($"Exception when starting termin: {ex.Message}");
-		}
-	}
-
 	private async Task EndTermin()
 	{
-		if (activeTermin is null)
+		if (termin is null)
 			return;
 
 		try
 		{
-			string endpoint = $"api/Termin/{activeTermin.TerminId}/end";
+			string endpoint = $"api/Termin/{termin.TerminId}/end";
 
 			// Make a PUT request to end the termin by updating the EndTime
 			var response = await _httpClient.PutAsync(endpoint, null);
@@ -121,13 +78,13 @@
 		try
 		{
 			// Call the API to download the attendance Excel file
-			var response = await _httpClient.GetAsync($"api/Attendance/kolegij/{id}/export");
+			var response = await _httpClient.GetAsync($"api/Attendance/termin/{id}/export");
 
 			if (response.IsSuccessStatusCode)
 			{
 				// Get the file content as a byte array
 				var fileContent = await response.Content.ReadAsByteArrayAsync();
-				var fileName = "Prisutnost_po_kolegiju.xlsx";
+				var fileName = "Pristnost_po_terminu.xlsx";
 
 				// Log to check if file content is received
 				Console.WriteLine("File content size: " + fileContent.Length);
@@ -170,11 +127,6 @@
 	{
 		Navigation.NavigateTo("/");
 	}
-
-	private void NavigateToTermin(int terminId)
-	{
-		Navigation.NavigateTo($"/termin-detalji/{terminId}");
-	}
 }
 
 <PageTitle>Detalji Kolegija</PageTitle>
@@ -189,65 +141,59 @@ else if (hasError)
 {
 	<p>Error loading kolegij details or students.</p>
 }
-else if (kolegij is not null)
+else if (termin is not null && studentAttendance is not null)
 {
 	<div>
 		<button class="btn btn-outline-secondary" @onclick="GoBack">Povratak</button>
 	</div>
-	<h3>@kolegij.Naziv</h3>
-	<div class="kolegij-details">
-		<p><strong>Professor:</strong> @kolegij.Profesor</p>
-		<p><strong>Assistant:</strong> @kolegij.Asistent</p>
+
+	<div class="card-body">
+		<div class="card-text-wrapper">
+			<h5 class="card-title">@termin.TerminId | @termin.Dvorana.Naziv (@termin.Dvorana.Lokacija)</h5>
+			@if (isTerminActive)
+			{
+				<span class="badge bg-success position-absolute top-0 end-0 m-2">U tijeku</span>
+			}
+			else
+			{
+				<span class="badge bg-danger position-absolute top-0 end-0 m-2">Završeno</span>
+			}
+			<p class="card-text">
+				<strong>Početak:</strong> @termin.StartTime.ToString("dd.MM.yyyy HH:mm") <br />
+				<strong>Završetak:</strong> @(termin.EndTime.HasValue ? termin.EndTime.Value.ToString("dd.MM.yyyy HH:mm") : "")<br />
+			</p>
+		</div>
 	</div>
 
-
 	<div class="action-row d-flex align-items-center">
-		@if (activeTermin is not null)
+		@if (isTerminActive)
 		{
 			<button class="btn btn-danger me-3" @onclick="() => EndTermin()">Završi aktivni termin</button>
 		}
-		else
-		{
-			<div class="dropdown-wrapper me-3">
-				<select id="dvoranaSelect" @bind="selectedDvoranaId" class="form-select">
-					@foreach (var dvorana in dvorane)
-					{
-						<option value="@dvorana.DvoranaId">@dvorana.Naziv | @dvorana.Lokacija</option>
-					}
-				</select>
-			</div>
-			<button class="btn btn-success me-3" @onclick="StartTermin">Započni novi termin</button>
-		}
 		<button class="btn btn-primary ms-auto" @onclick="ExportAttendance">
-			<i class="bi bi-file-earmark-excel"></i> Izvoz prisutnosti po kolegiju
+			<i class="bi bi-file-earmark-excel"></i> Izvoz prisutnosti po terminu
 		</button>
 	</div>
 
-	<h4>Termini:</h4>
-	<div class="termin-list">
-		@foreach (var termin in termini)
+	<h4>Prisutnost studenata</h4>
+		<div class="student-list">
+		@foreach (var student in studentAttendance)
 		{
-			<div class="card position-relative termin-card" @onclick="() => NavigateToTermin(termin.TerminId)">
-				<div class="card-body">
-					<div class="card-text-wrapper">
-						<h5 class="card-title">@termin.TerminId | @termin.Dvorana.Naziv (@termin.Dvorana.Lokacija)</h5>
-						@if (DateTime.Now >= termin.StartTime && (!termin.EndTime.HasValue || DateTime.Now <= termin.EndTime.Value))
-						{
-							<span class="badge bg-success position-absolute top-0 end-0 m-2">U tijeku</span>
-						}
-						else
-						{
-							<span class="badge bg-danger position-absolute top-0 end-0 m-2">Završeno</span>
-						}
-						<p class="card-text">
-							<strong>Početak:</strong> @termin.StartTime.ToString("dd.MM.yyyy HH:mm") <br />
-							<strong>Završetak:</strong> @(termin.EndTime.HasValue ? termin.EndTime.Value.ToString("dd.MM.yyyy HH:mm") : "")<br />
-						</p>
+					<div class="card">
+						<div class="card-body">
+							<img src="@(!string.IsNullOrEmpty(student.SlikaUrl) ? student.SlikaUrl : "placeholder-image.jpg")" alt="Student Photo" class="student-photo" />
+							<div class="card-text-wrapper">
+								<h5 class="card-title">@student.Ime @student.Prezime</h5>
+								<p class="card-text">
+									<strong>OIB:</strong> @student.Oib <br />
+									<strong>Prisutnost:</strong> @student.Percentage%
+								</p>
+							</div>
+						</div>
 					</div>
-				</div>
-			</div>
 		}
-	</div>
+		</div>
+
 }
 else
 {
@@ -263,15 +209,11 @@ else
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	}
 
-	.termin-list {
+	.student-list {
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
 		padding: 20px;
-	}
-
-	.termin-card {
-		cursor: pointer;
 	}
 
 	.card {

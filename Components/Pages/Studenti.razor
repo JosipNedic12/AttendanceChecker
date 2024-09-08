@@ -4,7 +4,7 @@
 @inject IHttpClientFactory ClientFactory
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
-
+<button class="btn btn-outline-secondary" @onclick="GoBack">Povratak</button>
 <h3>Studenti</h3>
 @if (isLoading)
 {
@@ -16,7 +16,6 @@ else if (hasError)
 }
 else if (students is not null && students.Any())
 {
-    <button class="btn btn-primary" @onclick="GoBack">Povratak</button>
     <div class="student-list">
         @foreach (var student in students)
         {
@@ -54,7 +53,7 @@ else
             _httpClient = ClientFactory.CreateClient("API");
 
             // Fetch students from the API
-            students = await _httpClient.GetFromJsonAsync<List<Student>>("api/Attendance/students");
+            students = await _httpClient.GetFromJsonAsync<List<Student>>("api/Student");
 
         }
         catch (Exception ex)

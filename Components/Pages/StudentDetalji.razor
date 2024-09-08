@@ -17,7 +17,7 @@
             _httpClient = ClientFactory.CreateClient("API");
 
             // Fetch student details from the API
-            student = await _httpClient.GetFromJsonAsync<Student>($"api/Attendance/student/{studentId}");
+            student = await _httpClient.GetFromJsonAsync<Student>($"api/Student/{studentId}");
 
             if (student == null)
             {

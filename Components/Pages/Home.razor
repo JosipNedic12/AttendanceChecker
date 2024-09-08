@@ -18,7 +18,7 @@
             _httpClient = ClientFactory.CreateClient("API");
 
             // Fetch the kolegiji data from your API
-            kolegiji = await _httpClient.GetFromJsonAsync<List<Kolegij>>("api/Attendance/kolegiji");
+            kolegiji = await _httpClient.GetFromJsonAsync<List<Kolegij>>("api/Kolegij");
         }
         catch (Exception ex)
         {
