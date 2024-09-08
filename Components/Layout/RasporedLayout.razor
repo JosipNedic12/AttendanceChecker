@@ -1,5 +1,7 @@
-﻿<!-- CalendarGrid.razor -->
-@typeparam TItem where TItem : AttendanceChecker.Models.Termin
+﻿@using AttendanceChecker.Models.Entities
+
+<!-- CalendarGrid.razor -->
+@typeparam TItem where TItem : Termin
 
 
 <div class="calendar-grid">
@@ -13,7 +15,7 @@
                     {
                         <div class="event">
                             <!-- Customize based on your model -->
-                            <strong>@day.Item.Vrijeme.ToShortDateString()</strong> <br />
+                            <strong>@day.Item.StartTime.ToShortDateString()</strong> <br />
                             @day.Item.Kolegij.Naziv
                         </div>
                     }
@@ -47,7 +49,7 @@
         for (var day = 1; day <= daysInMonth; day++)
         {
             var date = new DateTime(currentDate.Year, currentDate.Month, day);
-            var itemForDate = Items.FirstOrDefault(i => i.Vrijeme.Date == date);
+            var itemForDate = Items.FirstOrDefault(i => i.StartTime.Date == date);
 
             week.Add(new Day<TItem>
                 {

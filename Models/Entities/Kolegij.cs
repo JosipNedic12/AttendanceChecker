@@ -1,7 +1,7 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace AttendanceChecker.Models
+namespace AttendanceChecker.Models.Entities
 {
     [Table("kolegiji")]
     public class Kolegij : BaseModel
@@ -17,8 +17,5 @@ namespace AttendanceChecker.Models
 
         [Column("asistent")]
         public string? Asistent { get; set; }
-
-        [Column("br_sati")]
-        public long? BrojSati { get; set; }
     }
 }

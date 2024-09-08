@@ -1,12 +1,12 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
-namespace AttendanceChecker.Models
+namespace AttendanceChecker.Models.Entities
 {
     [Table("studenti")]
     public class Student : BaseModel
     {
-        [PrimaryKey("student_id")]
+        [PrimaryKey("student_id", false)]
         public int StudentId { get; set; }
 
         [Column("ime")]

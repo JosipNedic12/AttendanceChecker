@@ -5,6 +5,7 @@ using ClosedXML.Excel;
 using System.Globalization;
 using Supabase.Postgrest.Exceptions;
 using static Supabase.Postgrest.Constants;
+using AttendanceChecker.Models.Entities;
 
 namespace AttendanceChecker.Controllers
 {
@@ -37,14 +38,16 @@ namespace AttendanceChecker.Controllers
                 if (student is null)
                     return NotFound(new { error = "Student not found" });
 
-                var now = DateTime.UtcNow;
+				var now = DateTime.UtcNow;
+				var startTime = now.AddMinutes(-15);
+				var endTime = now;
 
-                var terminResponse = await _supabaseClient
-                    .From<Termin>()
-                    .Where(x => x.Vrijeme >= now.AddMinutes(-15) && x.Vrijeme <= now)
-                    .Get();
+				var terminResponse = await _supabaseClient
+					.From<Termin>()
+					.Where(x => x.StartTime >= startTime && x.StartTime <= endTime)
+					.Get();
 
-                if (terminResponse.Models.Count > 0)
+				if (terminResponse.Models.Count > 0)
                 {
                     foreach (var termin in terminResponse.Models)
                     {
@@ -52,9 +55,9 @@ namespace AttendanceChecker.Controllers
                             .From<Nazocnost>()
                             .Insert(new Nazocnost
                             {
-                                NazocnostId = Guid.NewGuid().ToString(),
                                 TerminId = termin.TerminId,
-                                StudentId = student.StudentId
+                                StudentId = student.StudentId,
+                                DateScanned = DateTime.Now,
                             });
                     }
                     return Ok(new { message = "Record inserted successfully" });
@@ -176,27 +179,19 @@ namespace AttendanceChecker.Controllers
             return Ok(student);
         }
 
-        [HttpPost("zapocni-termin/{kolegijId:int}")]
-        public async Task<IActionResult> StartTermin(int kolegijId)
+        [HttpPost("zapocni-termin")]
+        public async Task<IActionResult> StartTermin(StartTerminRequest request)
         {
             try
             {
-                //Fetch the highest current termin_id from the "termini" table
-                var latestTermin = await _supabaseClient
-                    .From<Termin>()
-                    .Order("TerminId", Ordering.Descending)
-                    .Limit(1)
-                    .Single();
-
-                int nextTerminId = (latestTermin != null) ? latestTermin.TerminId + 1 : 85;
-
                 //Create a new Termin with the current date and time
                 var newTermin = new Termin
                 {
-                    TerminId = nextTerminId,
-                    KolegijId = kolegijId,
-                    Vrijeme = DateTime.Now
-                };
+                    KolegijId = request.KolegijId,
+                    StartTime = DateTime.Now,
+                    EndTime = DateTime.Now.AddHours(1.5),
+                    DvoranaId = request.DvoranaId
+				};
 
                 // Insert the new Termin into Supabase
                 var response = await _supabaseClient.From<Termin>().Insert(newTermin);
@@ -260,9 +255,17 @@ namespace AttendanceChecker.Controllers
             return Ok(termin);
         }
 
-        #region Helper methods
+		[HttpGet("dvorane")]
+		public async Task<IActionResult> GetDvorane()
+		{
+			var response = await _supabaseClient.From<Dvorana>().Get();
+			var dvorane = response.Models;
+			return Ok(dvorane);
+		}
 
-        private async Task<IEnumerable<dynamic>> FetchAttendanceAsync(int kolegijId)
+		#region Helper methods
+
+		private async Task<IEnumerable<dynamic>> FetchAttendanceAsync(int kolegijId)
         {
             var totalCount = await GetTotalTerminiForKolegijAsync(kolegijId);
             var students = await GetAllStudentsAsync();
@@ -335,4 +338,5 @@ namespace AttendanceChecker.Controllers
 
         #endregion
     }
+
 }
