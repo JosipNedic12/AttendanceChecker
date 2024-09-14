@@ -1,4 +1,5 @@
 Student Attendance Tracking System using RFID/NFC
+
 This project is a web-based application for tracking student attendance at university lectures using RFID/NFC technology. 
 The system allows professors to monitor student attendance in real-time through the scanning of student ID cards (IKSICA). 
 The application stores data on attendance, including student names, course details, and attendance percentages, using the Supabase platform.
@@ -24,3 +25,8 @@ RFID/NFC Reader
 Dasduino ESP32 ConnectPlus
 Supabase account and API keys for data storage
 Visual Studio or compatible IDE
+
+App layout:
+![Home page](https://github.com/user-attachments/assets/8b650ebc-1f9b-4d48-908a-49b5a834b211)
+![Class details page](https://github.com/user-attachments/assets/51ae5e5e-cd49-4d22-b57f-f1ee43b5c434)
+![Students page](https://github.com/user-attachments/assets/2e91062c-0a6c-448e-8b84-f1b3094ae964)
