@@ -46,7 +46,18 @@ namespace AttendanceChecker.Controllers
             if (termin is null)
                 return NotFound(new { error = "No termin found within the last 15 minutes" });
 
-            await _supabaseClient
+			// Check if the record already exists for the given student and termin
+			var existingAttendance = await _supabaseClient
+				.From<Nazocnost>()
+				.Where(x => x.StudentId == student.StudentId && x.TerminId == termin.TerminId)
+				.Single();
+
+			if (existingAttendance != null)
+			{
+				return BadRequest(new { error = "Attendance record already exists for this student and termin." });
+			}
+
+			await _supabaseClient
                 .From<Nazocnost>()
                 .Insert(new Nazocnost
                 {

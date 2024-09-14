@@ -12,7 +12,7 @@
 	[Parameter] public int id { get; set; }
 	private HttpClient? _httpClient;
 	private Termin? termin;
-	private List<StudentAttendance>? studentAttendance;
+	private List<Nazocnost>? studentAttendance;
 	private List<Dvorana>? dvorane;
 	private bool isLoading = true;
 	private bool hasError = false;
@@ -26,7 +26,7 @@
 			_httpClient = ClientFactory.CreateClient("API");
 
 			// Fetch students' attendance data for current termin
-			studentAttendance = await _httpClient.GetFromJsonAsync<List<StudentAttendance>>($"api/Attendance/termin/{id}");
+			studentAttendance = await _httpClient.GetFromJsonAsync<List<Nazocnost>>($"api/Attendance/termin/{id}");
 
 			// Fetch termin
 			termin = await _httpClient.GetFromJsonAsync<Termin>($"api/Termin/{id}");
@@ -177,16 +177,15 @@ else if (termin is not null && studentAttendance is not null)
 
 	<h4>Prisutnost studenata</h4>
 		<div class="student-list">
-		@foreach (var student in studentAttendance)
+		@foreach (var attendence in studentAttendance)
 		{
 					<div class="card">
 						<div class="card-body">
-							<img src="@(!string.IsNullOrEmpty(student.SlikaUrl) ? student.SlikaUrl : "placeholder-image.jpg")" alt="Student Photo" class="student-photo" />
+					<img src="@(!string.IsNullOrEmpty(attendence.Student.Slika) ? attendence.Student.Slika : "placeholder-image.jpg")" alt="Student Photo" class="student-photo" />
 							<div class="card-text-wrapper">
-								<h5 class="card-title">@student.Ime @student.Prezime</h5>
+						<h5 class="card-title">@attendence.Student.Ime @attendence.Student.Prezime</h5>
 								<p class="card-text">
-									<strong>OIB:</strong> @student.Oib <br />
-									<strong>Prisutnost:</strong> @student.Percentage%
+							<strong>OIB:</strong> @attendence.Student.Oib <br />
 								</p>
 							</div>
 						</div>

@@ -19,7 +19,9 @@ namespace AttendanceChecker.Controllers
         [HttpGet("")]
         public async Task<IActionResult> GetKolegiji()
         {
-            var kolegijiResponse = await _supabaseClient.From<Kolegij>().Get();
+            var kolegijiResponse = await _supabaseClient
+                .From<Kolegij>()
+                .Get();
 
             if (!kolegijiResponse.ResponseMessage.IsSuccessStatusCode)
                 return Problem("Error fetching kolegiji: " + kolegijiResponse.ResponseMessage);

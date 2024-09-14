@@ -119,9 +119,13 @@ namespace AttendanceChecker.Controllers
         [HttpGet("kolegij/{kolegijId}")]
         public async Task<IActionResult> GetTerminByKolegijId(int kolegijId)
         {
-            var response = await _supabaseClient.From<Termin>().Where(x => x.KolegijId == kolegijId).Get();
+			var response = await _supabaseClient
+	            .From<Termin>()
+	            .Where(x => x.KolegijId == kolegijId)
+	            .Order(x => x.StartTime, Supabase.Postgrest.Constants.Ordering.Descending)
+	            .Get();
 
-            if (response.ResponseMessage.IsSuccessStatusCode)
+			if (response.ResponseMessage.IsSuccessStatusCode)
             {
                 List<Termin> termini = response.Models;
                 return Ok(termini);
